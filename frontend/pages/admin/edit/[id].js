@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import AdminSidebar from '../../components/AdminSidebar';
-import AdminTopBar from '../../components/AdminTopBar';
-import FormInput from '../../components/FormInput';
-import { API_URL } from '../../config/api';
+import AdminSidebar from '../../../components/AdminSidebar';
+import AdminTopBar from '../../../components/AdminTopBar';
+import FormInput from '../../../components/FormInput';
+import { API_URL } from '../../../config/api';
 
 export default function EditContent() {
     const router = useRouter();

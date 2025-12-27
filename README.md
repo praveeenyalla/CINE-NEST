@@ -1,5 +1,7 @@
 # CINE NEST - AI-Powered OTT Platform
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/0f1e542c-8209-4c97-b692-55452b40986a/deploy-status)](https://app.netlify.com/projects/cinenestai/deploys)
+
 ## Overview
 CINE NEST is a next-generation OTT (Over-The-Top) streaming platform that leverages Artificial Intelligence to provide personalized content recommendations and deep user analytics. Built with a modern tech stack, it offers a premium user experience for both viewers and administrators.
 

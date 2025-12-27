@@ -36,19 +36,36 @@ export default function Home() {
     fetchCurated();
   }, []);
 
+
+
   // reliable backdrops for demo
   const backdrops = [
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuACge5918lWCM_VF6J-qN0KboiWAxJIHifwa6uIbtMrZ6Cr5RmumxGZv-n4vqgprkR0G6u4uMLF8K-mann5ShPykDb28PS89oOWYzmtq19hpJMoT02zUrF7zMj-SH5lQ7N5Yfo_JbLCac7GV1Ok8nUDu01YVV9IvQfyGdA-i_ytM0h-P4mtIhW18T6yZ6bkY3S_EeL9gsBGL43yx01rvg_rlaBzT6uiuJP9XcPryzbr1jGR3P8yqrmC4npIat0P0UMFe3GSuK6gqLM",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuDsbZDKu32l_pJhTn73wQVeKS7Aum8vLPKPDfgtiNSB7E8S76j81tcBsN-RaDPKZyw37NX4YdCi_LODqAU19T7lsI3qxd6eJG4PZWndWTwbm5ZdOvkjuPuNWT6QSfx6Boa7JLnsOjYVpsKK1wPUC5NMlHDAM2wrnDQbznTQg-drHmoqBw_FJel8LSaxVRi6qoJ7upG1_rOu3YT0ryx10f9RBbcwlyjJMYYiNckfyocf8OC4faMkYKngfSk3YSJei1ILN9jWKJtzd4M",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCOElLHQWIHQJjnA7rban0-GvwSltC78yCRqFQ1u-aatyhYF40-fl-4Kd68giZraF38-XTYc_FzCJOwFS8MITmgbbLIZtHc7oRj92LUmq9jQkaiWUtifpsx7gNAvKgbijTAGpxkwpxwR1uERvFPeyHnI4W0rRcJoOuFP4ZDfWayImj6oxU79UTt5RkyyrG9Wsd7uDwcOeB9-mPpAxcbqVjbcWDX9zLSSs_cXMEjngirJ-amVTH2VjUolQEihMBmymsJqo9YlYVvl9Q",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuD2-UKyS86fskUIhJel8zR1CKOcDb_gmECIOVdhxjgY_oHx1NiViyHobXMv1xmujRsAVYFkjXKfoUK5n6xxQ6mzhNU3dqRZTYSKB-P_LHRLzPR8tI4THUL5zikufmY3lijlrnGy5O6AYTBELd-USp7-1safy6s_AxHATrgRi_kkgtiqlbq-J-8_ReV7k8MHdnMRnN62CyvLGe5vuWPy6LDu_On3gsv61x928tr_I-GydjBI2X1qrV6DKptaK_rPZ-HpQLKf19YIb_U",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCqglCDd2tKlQA4-cC9713Qp2zbNvfMoOicEz5x1_vMihDBluAVSQ7skNk12kqMSf7l5t-Ys9n3fid9BIOO84TfW2XRKjJr1b8qAhD_pZE7tXkM6iI86ns3A2noItZuw09W1ojduyXurLu-RHlbzMVyrJOPUCM1Lsq4hwtfMurCUikd43Xz2LR9t_-5Mexdj9q-jsoH7YFqQ6Ka37T3LBJXptAgTm6-c_9kPxDVckcajKpgJTov1ILNfPzawIzh9wpRlsDM91_9kII",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuAcKdHtjWP6lVycv9m75zrseoWdh1teUjZrz6SPE2Focxt3XSa5KZkek0Smv0Y6TBNz2s8U0LvMnI6PCpxv9zRTfXMC6i7MqpK9Q77bI4XBDe0mtPbWWYAXPoI3xrBxbj94KArzDhttIEXdPY9kkyIukV7hbUYsKUTMBz-HbO8xRdmXn51C6oubeIcFfAMsJ8m3lFI-A4ouqkZaN0mD1MzAA-bSS1urOeHsq1-D6WCnQd3plAb4j-RkXH1g7t-KYvE0QCIOr_9yZzI",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuB8K36rCQfLGj828ZEJfTcoiYpIuX1bhxPWnzgJltPmiyGRmdcc2AVGv88tRF8HXNR82-76bkKMYLFaer4EVnvrrtVW1p4-voAH8t_mmdL7UZmFU4VtqagTeJwPQdPlkloHq3H2kN6kgmrCRpYRNZKpOE-fbxXDFN1BDEf_7mfYGA4RFHIFpDkfyMBkKYPfgFwYWvp7awx5g0c0Fashh1c-H8vAYenr2J1UDnRZ5tvVnMrsTDaSQILWQD3A95KJLE9y0IFI6SnKlWM",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBpS99wTSGUaa0MZLOoU_nVWNHi3TZLYaUwf1Hp-9GA983psQUupf3ZJ9dZzklwtlWH1BMNoAmex962KbnRxtGZsECyAlj_uRP5kU_0UWjjdC55WVQOc_yy_x_PrY2tBZ3JM4Nme6354rb8eYjAoGMJ0hmqRASXy54edKhus-BE_VvEnxHstA6lbnokiYknozDoiWqO5mG2zvO3RQWfjyqcgzz2OAF_vSdnCmYEf5KmKHRKF6nL4foKszTQj-CF84C2Jimm43YDKz8"
+
+
+    "https://pbs.twimg.com/media/DKi5oicVYAM6C2q.jpg",
+    "https://img.airtel.tv/unsafe/fit-in/500x0/filters:format(webp)/https://xstreamcp-assets-msp.streamready.in/assets/HOTSTAR_DTH/SERIES/690e107c287dfd4cb48198c1/images/PORTRAIT/1734497809655-v?o=production",
+    "https://media.posterstore.com/site_images/68631cf30b074212f55c844b_472608644_WB0074-8.jpg?auto=compress%2Cformat&fit=max&w=3840",
+    "https://images-cdn.ubuy.ae/64efda27ec49f86e4c6ce257-wednesday-tv-show-poster-wednesday.jpg",
+    "https://m.media-amazon.com/images/I/81c8B0UbFtL._AC_UF1000,1000_QL80_.jpg",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnqWOZ99fTgmHd3uMpq_P6Y9didPr3IDK2aQ&s",
+
+  ]
+  const customTrendingImages = [
+    "https://deadline.com/wp-content/uploads/2025/11/Stranger-Things-5_33a02d.jpg?w=1024", // 1: Stranger Things (example)
+    "https://www.tallengestore.com/cdn/shop/products/JohnWick-KeanuReeves-HollywoodEnglishActionMoviePoster-1_769183ab-298c-43d8-82ce-45b958ca2426.jpg?v=1649071596", // 3: The Boys
+    "https://m.media-amazon.com/images/M/MV5BYjA3NDkwNzktNjJkYi00ODNhLWFhYzQtYzk5NjU4MDM0OWZmXkEyXkFqcGc@._V1_.jpg",
+    "https://resizing.flixster.com/CXOXbOpLNL1NNkXTQu-4Rgvcszs=/ems.cHJkLWVtcy1hc3NldHMvbW92aWVzLzM0NGRkMDM2LWVjNDQtNGZlMC04NGM3LWZkMzQ2Njg1OTUyNi53ZWJw", // 4: Loki
+    "https://m.media-amazon.com/images/M/MV5BZjkxZWJiNTUtYjQwYS00MTBlLTgwODQtM2FkNWMyMjMwOGZiXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg", // 5: Wednesday
   ];
 
-  const getRandomBackdrop = (index) => backdrops[index % backdrops.length];
+  const getBackdrop = (index) => {
+    // Check if a custom image exists for this index
+    if (customTrendingImages[index] && customTrendingImages[index].trim() !== "") {
+      return customTrendingImages[index];
+    }
+    // Fallback to default
+    return backdrops[index % backdrops.length];
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('userToken');
@@ -302,7 +319,7 @@ export default function Home() {
                 {(curatedData.trending_now || []).slice(0, 5).map((item, index) => (
                   <div key={index} className="group relative aspect-[2/3] bg-surface-dark rounded-lg overflow-hidden cursor-pointer transition-transform hover:-translate-y-2 duration-300 border border-white/5 hover:border-primary/50">
                     <div className="absolute top-2 right-2 z-20 bg-primary/90 text-white text-xs font-bold px-2 py-1 rounded shadow-lg">{item.imdb} ★</div>
-                    <div className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url('${getRandomBackdrop(index)}')` }}></div>
+                    <div className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url('${getBackdrop(index)}')` }}></div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity"></div>
                     <div className="absolute bottom-0 left-0 w-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform">
                       <h4 className="text-white font-bold text-lg truncate">{item.title}</h4>
@@ -332,7 +349,7 @@ export default function Home() {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
                 {(curatedData.top_rated || []).slice(0, 6).map((item, index) => (
                   <div key={index} className="group relative aspect-[2/3] bg-black rounded-lg overflow-hidden cursor-pointer transition-transform hover:-translate-y-2 duration-300 border border-white/5 hover:border-primary/30">
-                    <div className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url('${getRandomBackdrop(index + 5)}')` }}></div>
+                    <div className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url('${getBackdrop(index + 5)}')` }}></div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
                     <div className="absolute bottom-3 left-3 right-3">
                       <h4 className="text-white font-bold text-sm truncate">{item.title}</h4>
