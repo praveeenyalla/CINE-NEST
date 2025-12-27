@@ -13,6 +13,7 @@ user_collection = None
 content_collection = None
 history_collection = None
 admins_collection = None
+user_analytics_collection = None
 
 if not MONGO_URI:
     # Fallback or default if not set (User needs to set this in .env)
@@ -29,6 +30,7 @@ try:
     content_collection = db["content"]
     history_collection = db["history"]
     admins_collection = db["admins"]
+    user_analytics_collection = db["user_analytics_data"]
     
     print("✅ Connected to MongoDB")
 except Exception as e:

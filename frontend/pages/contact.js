@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Layout from '../components/Layout';
+import { sendEmail } from '../utils/mail';
 
 export default function Contact() {
     const [formData, setFormData] = useState({
@@ -10,15 +11,24 @@ export default function Contact() {
     });
     const [status, setStatus] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Simulate form submission
         setStatus('sending');
-        setTimeout(() => {
+
+        const result = await sendEmail(formData);
+
+        if (result.success) {
             setStatus('sent');
             setFormData({ name: '', email: '', subject: '', message: '' });
-        }, 1500);
+            setTimeout(() => setStatus(''), 5000);
+        } else {
+            console.error(result.error);
+            setStatus('error');
+            alert('Failed to send message: ' + (result.error || 'Unknown error'));
+            setStatus('');
+        }
     };
+
 
     return (
         <Layout>
@@ -37,18 +47,19 @@ export default function Contact() {
                                     <input
                                         type="text"
                                         required
-                                        className="w-full bg-background-dark border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                                        className="w-full bg-black/80 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors placeholder-gray-500"
                                         placeholder="John Doe"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     />
+
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-400 mb-2">Email</label>
                                     <input
                                         type="email"
                                         required
-                                        className="w-full bg-background-dark border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                                        className="w-full bg-black/80 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors placeholder-gray-500"
                                         placeholder="john@example.com"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -59,15 +70,15 @@ export default function Contact() {
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-2">Subject</label>
                                 <select
-                                    className="w-full bg-background-dark border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                                    className="w-full bg-black/80 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
                                     value={formData.subject}
                                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                                 >
-                                    <option value="">Select a topic</option>
-                                    <option value="support">Technical Support</option>
-                                    <option value="feedback">Feedback & Suggestions</option>
-                                    <option value="business">Business Inquiries</option>
-                                    <option value="other">Other</option>
+                                    <option value="" className="bg-gray-900 text-white">Select a topic</option>
+                                    <option value="support" className="bg-gray-900 text-white">Technical Support</option>
+                                    <option value="feedback" className="bg-gray-900 text-white">Feedback & Suggestions</option>
+                                    <option value="business" className="bg-gray-900 text-white">Business Inquiries</option>
+                                    <option value="other" className="bg-gray-900 text-white">Other</option>
                                 </select>
                             </div>
 
@@ -76,7 +87,7 @@ export default function Contact() {
                                 <textarea
                                     required
                                     rows="5"
-                                    className="w-full bg-background-dark border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors resize-none"
+                                    className="w-full bg-black/80 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors resize-none placeholder-gray-500"
                                     placeholder="How can we help you?"
                                     value={formData.message}
                                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}

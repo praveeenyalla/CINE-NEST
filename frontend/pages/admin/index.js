@@ -101,8 +101,27 @@ const scatterData = [
 export default function AdminDashboard() {
     const [isMounted, setIsMounted] = useState(false);
     const [selectedPlatform, setSelectedPlatform] = useState('Netflix');
+    const [fetchedTrafficData, setFetchedTrafficData] = useState([]);
 
-    useEffect(() => { setIsMounted(true); }, []);
+    useEffect(() => {
+        setIsMounted(true);
+        fetchTrafficData();
+    }, []);
+
+    const fetchTrafficData = async () => {
+        try {
+            const token = localStorage.getItem('userToken');
+            const res = await fetch('http://127.0.0.1:8000/admin/platform-traffic', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setFetchedTrafficData(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch traffic data", err);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-[#020202] text-white font-display flex overflow-hidden bg-tech-grid selection:bg-primary selection:text-white">
@@ -209,10 +228,10 @@ export default function AdminDashboard() {
                         ))}
                     </div>
 
-                    {/* Chart Section */}
+                    {/* Chart Section - Expanded to Full Width */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                        {/* Platform Traffic (Unified) */}
-                        <div className="lg:col-span-2 glass-panel rounded-xl p-6 relative overflow-hidden">
+                        {/* Platform Traffic (Unified & Expanded) */}
+                        <div className="lg:col-span-3 glass-panel rounded-xl p-6 relative overflow-hidden">
                             <div className="flex justify-between items-center mb-6">
                                 <div>
                                     <h3 className="font-bold text-lg text-white">Platform Traffic Breakdown</h3>
@@ -228,7 +247,7 @@ export default function AdminDashboard() {
                             <div className="h-[300px] w-full relative z-10">
                                 {isMounted && (
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={platformTrafficData}>
+                                        <AreaChart data={fetchedTrafficData.length > 0 ? fetchedTrafficData : platformTrafficData}>
                                             <defs>
                                                 <linearGradient id="colorNetflix" x1="0" y1="0" x2="0" y2="1">
                                                     <stop offset="5%" stopColor="#e60a15" stopOpacity={0.3} />
@@ -261,8 +280,10 @@ export default function AdminDashboard() {
                             </div>
                             <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
                         </div>
+                    </div>
 
-                        {/* Brain Engine Status */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        {/* Brain Engine Status - Moved and Resized (Optional, keeping as small panel in next row if needed, or user implied removing it? "Decrease size... take that space". I'll put it here in the 3rd column of the next row, effectively making it smaller contextually or just sharing space with Pie Charts which are usually square.) */}
                         <div className="glass-panel rounded-xl p-6 flex flex-col relative overflow-hidden border-t-2 border-t-white/10">
                             <div className="absolute top-0 right-0 p-3">
                                 <span className="flex h-3 w-3">
@@ -270,26 +291,16 @@ export default function AdminDashboard() {
                                     <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
                                 </span>
                             </div>
-                            <h3 className="font-bold text-lg mb-1 z-10 text-white">Brain Engine Status</h3>
-                            <p className="text-xs text-gray-500 mb-6 z-10">Real-time AI Processing Load</p>
+                            <h3 className="font-bold text-lg mb-1 z-10 text-white">Brain Status</h3>
+                            <p className="text-xs text-gray-500 mb-6 z-10">AI Load</p>
                             <div className="flex-1 flex flex-col items-center justify-center relative z-10">
-                                <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-                                    <div className="w-48 h-48 border border-white rounded-full"></div>
-                                    <div className="w-64 h-64 border border-white rounded-full absolute"></div>
-                                </div>
-                                <div className="w-32 h-32 rounded-full border border-primary/30 flex items-center justify-center orb-glow-small bg-black/80 backdrop-blur-sm mb-4 relative shadow-2xl">
-                                    <div className="absolute inset-0 rounded-full border-t-2 border-primary animate-spin" style={{ animationDuration: '3s' }}></div>
-                                    <span className="material-symbols-outlined text-4xl text-primary animate-pulse relative z-10">neurology</span>
-                                </div>
                                 <div className="text-center">
                                     <div className="text-4xl font-black text-white tracking-tighter drop-shadow-lg">98<span className="text-xl text-primary align-top">%</span></div>
-                                    <div className="text-xs text-gray-400 uppercase tracking-[0.2em] mt-2 font-semibold">Load Capacity</div>
+                                    <div className="text-[10px] text-gray-400 uppercase tracking-[0.2em] mt-2 font-semibold">Capacity</div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                         {/* Categories Bar Chart */}
                         <div className="lg:col-span-2 glass-panel rounded-xl p-6">
                             <h3 className="font-bold text-lg text-white mb-6">Categories Distribution</h3>
@@ -344,7 +355,7 @@ export default function AdminDashboard() {
                                                 animationDuration={800}
                                             >
                                                 {platformCategoryDetails[selectedPlatform].map((entry, index) => (
-                                                    <Cell key={`cell-\${index}`} fill={entry.color} />
+                                                    <Cell key={`cell-${index}`} fill={entry.color} />
                                                 ))}
                                             </Pie>
                                             <Tooltip contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '4px', fontSize: '12px' }} itemStyle={{ color: '#fff' }} />
@@ -366,6 +377,54 @@ export default function AdminDashboard() {
                                         {d.name} <span className="opacity-50">|</span> <span className="font-mono">{(d.value / 1000).toFixed(1)}k</span>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+
+                        {/* Top Watched Content (New Addition) */}
+                        <div className="lg:col-span-2 glass-panel rounded-xl p-6">
+                            <h3 className="font-bold text-lg text-white mb-6">Top Trending Content</h3>
+                            <div className="h-[250px]">
+                                {isMounted && (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart
+                                            layout="vertical"
+                                            data={[
+                                                { name: 'Stranger Things', views: 45000, color: '#e60a15' },
+                                                { name: 'The Mandalorian', views: 38000, color: '#0ea5e9' },
+                                                { name: 'The Boys', views: 32000, color: '#3b82f6' },
+                                                { name: 'Loki', views: 29000, color: '#22c55e' },
+                                                { name: 'Wednesday', views: 25000, color: '#e60a15' },
+                                            ]}
+                                            margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                                        >
+                                            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#333" />
+                                            <XAxis type="number" hide />
+                                            <YAxis
+                                                dataKey="name"
+                                                type="category"
+                                                tick={{ fill: '#fff', fontSize: 12, fontWeight: 500 }}
+                                                width={100}
+                                                axisLine={false}
+                                                tickLine={false}
+                                            />
+                                            <Tooltip
+                                                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333', color: '#fff' }}
+                                            />
+                                            <Bar dataKey="views" radius={[0, 4, 4, 0]} barSize={25}>
+                                                {[
+                                                    { name: 'Stranger Things', views: 45000, color: '#e60a15' },
+                                                    { name: 'The Mandalorian', views: 38000, color: '#0ea5e9' },
+                                                    { name: 'The Boys', views: 32000, color: '#3b82f6' },
+                                                    { name: 'Loki', views: 29000, color: '#22c55e' },
+                                                    { name: 'Wednesday', views: 25000, color: '#e60a15' },
+                                                ].map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends, status, Body, Header
 from pydantic import BaseModel
-from database import content_collection, user_collection, db
+from database import content_collection, user_collection, db, user_analytics_collection
 
 import numpy as np
 import pandas as pd # Kept for stats if available
@@ -328,3 +328,139 @@ async def get_advanced_content_list(
         "page": page,
         "pages": math.ceil(total / limit)
     }
+
+@router.get("/user-analytics")
+async def get_user_analytics(
+    username: str = "",
+    platform_filter: str = "All Platforms",
+    category_filter: str = "All Categories",
+    page: int = 1,
+    limit: int = 20,
+    admin: dict = Depends(get_current_admin)
+):
+    if user_analytics_collection is None:
+        return {"data": [], "total": 0, "page": page, "pages": 0}
+
+    query = {}
+    if username:
+        query["username"] = {"$regex": username, "$options": "i"}
+    
+    if platform_filter != "All Platforms":
+        # Check if platform exists in any history item
+        query["history.platform"] = platform_filter
+        
+    if category_filter != "All Categories":
+        # Check if category exists in preferences or history
+        query["preferences"] = category_filter
+
+    total = user_analytics_collection.count_documents(query)
+    # Sort by joined_date desc by default
+    cursor = user_analytics_collection.find(query).sort("joined_date", -1).skip((page - 1) * limit).limit(limit)
+    
+    users = []
+    for doc in cursor:
+        # Custom serialization to be safe
+        user_data = dict(doc)
+        user_data["_id"] = str(user_data["_id"])
+        users.append(user_data)
+        
+    return {
+        "data": users,
+        "total": total,
+        "page": page,
+        "pages": math.ceil(total / limit)
+    }
+
+@router.get("/platform-traffic")
+async def get_platform_traffic(admin: dict = Depends(get_current_admin)):
+    if user_analytics_collection is None:
+        return []
+
+    # Aggregation Pipeline:
+    # 1. Unwind history array
+    # 2. Group by YEAR-MONTH substring (Reverting to Monthly for "Big Waves" aesthetic)
+    # 3. Sort by date
+    pipeline = [
+        {"$unwind": "$history"},
+        {"$addFields": {
+            "month_str": {"$substr": ["$history.date", 0, 7]}  # Extract YYYY-MM
+        }},
+        {"$group": {
+            "_id": {
+                "date": "$month_str",
+                "platform": "$history.platform"
+            },
+            "total_usage": {"$sum": "$history.watched_duration_mins"}
+        }},
+        {"$sort": {"_id.date": 1}}
+    ]
+
+    results = user_analytics_collection.aggregate(pipeline)
+
+    raw_map = {}
+    global_max = 0
+
+    for entry in results:
+        date_key = entry["_id"]["date"]
+        # Make readable: "2023-11" -> "Nov 23"
+        try:
+             dt = datetime.strptime(date_key, "%Y-%m")
+             readable_date = dt.strftime("%b %y")
+        except:
+             readable_date = date_key
+
+        platform = entry["_id"].get("platform", "Other")
+        usage = entry["total_usage"]
+        
+        # Normalize Platform Names
+        chart_key = platform
+        if "Netflix" in platform: chart_key = "Netflix"
+        elif "Prime" in platform: chart_key = "Prime"
+        elif "Disney" in platform: chart_key = "Disney"
+        elif "Hulu" in platform: chart_key = "Hulu"
+        
+        if readable_date not in raw_map:
+            # sort_key is used for strict sorting
+            raw_map[readable_date] = {"name": readable_date, "sort_key": date_key, "Netflix": 0, "Prime": 0, "Hulu": 0, "Disney": 0}
+        
+        raw_map[readable_date][chart_key] += usage
+        if raw_map[readable_date][chart_key] > global_max:
+            global_max = raw_map[readable_date][chart_key]
+
+    # Convert map to sorted list
+    chart_data = sorted(raw_map.values(), key=lambda x: x['sort_key'])
+    
+    # --- INJECT CURRENT "STRANGER THINGS" SPIKE ---
+    # User wants "More higher" (Higher spike).
+    # Using 2.5x global max to ensure it stands out significantly without completely destroying the scale.
+    
+    spike_target = int(global_max * 2.5) if global_max > 0 else 100000
+    
+    # Explicit "Today" datapoint to satisfy "up to date" request
+    target_date = "Dec 27 25" 
+    
+    chart_data.append({
+        "name": target_date,
+        "Netflix": spike_target, # The Huge Spike (Peak)
+        "Prime": int(global_max * 0.3),
+        "Hulu": int(global_max * 0.2),
+        "Disney": int(global_max * 0.4)
+    })
+
+    # "Coming back like that" -> Add a drop-off point to complete the wave shape
+    # This simulates the "end of the spike" or the downward slope.
+    # Can represent "Forecast" or "Late Night"
+    
+    chart_data.append({
+        "name": "Live",
+        "Netflix": int(spike_target * 0.6), # Drop down to 60% of peak
+        "Prime": int(global_max * 0.25),
+        "Hulu": int(global_max * 0.18),
+        "Disney": int(global_max * 0.35)
+    })
+
+    # Remove sort_key before sending
+    for item in chart_data:
+        if 'sort_key' in item: del item['sort_key']
+    
+    return chart_data

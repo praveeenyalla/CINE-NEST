@@ -1,21 +1,57 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import AdminSidebar from '../../components/AdminSidebar';
 
-const AUTH_LOGS = [
-    { id: 10234, user: "admin", ip: "192.168.1.10", device: "Chrome / Windows", location: "New York, USA", time: "Just now", status: "Success", method: "Password" },
-    { id: 10233, user: "neo_the_one", ip: "45.12.33.11", device: "Firefox / Linux", location: "Zion (Unknown)", time: "2 mins ago", status: "Success", method: "2FA" },
-    { id: 10232, user: "unknown", ip: "203.0.113.5", device: "Headless / Bot", location: "Moscow, RU", time: "5 mins ago", status: "Failed", method: "Brute Force" },
-    { id: 10231, user: "trinity_dev", ip: "172.16.0.5", device: "Safari / iOS", location: "San Francisco, USA", time: "12 mins ago", status: "Success", method: "Biometric" },
-    { id: 10230, user: "agent_smith", ip: "10.0.0.1", device: "System / Core", location: "Matrix Mainframe", time: "12 mins ago", status: "Failed", method: "API Key" },
-    { id: 10229, user: "morpheus_l", ip: "88.21.44.12", device: "Opera / Android", location: "Nebuchadnezzar", time: "25 mins ago", status: "Success", method: "Password" },
-    { id: 10228, user: "oracle_seer", ip: "127.0.0.1", device: "Edge / Windows", location: "Localhost", time: "1 hour ago", status: "Success", method: "Cookie" },
-    { id: 10227, user: "hacker_42", ip: "198.51.100.2", device: "Kali / Linux", location: "Unknown Proxy", time: "1 hour ago", status: "Blocked", method: "SQL Injection" },
-    { id: 10226, user: "guest_user", ip: "203.0.113.88", device: "Safari / macOS", location: "London, UK", time: "2 hours ago", status: "Success", method: "OAuth (Google)" },
-    { id: 10225, user: "test_acct", ip: "192.168.1.50", device: "Chrome / Android", location: "Toronto, CA", time: "3 hours ago", status: "Failed", method: "Password" },
-];
-
 export default function AuthLogs() {
+    const [logs, setLogs] = useState([]);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [loading, setLoading] = useState(true);
+
+    // Helpers for synthetic data generation
+    const getRandomIP = () => `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+    const DEVICES = ["Chrome / Windows", "Safari / macOS", "Firefox / Linux", "Edge / Windows", "Mobile / iOS", "Mobile / Android"];
+    const LOCATIONS = ["New York, USA", "London, UK", "Tokyo, JP", "Berlin, DE", "Toronto, CA", "Sydney, AU", "Mumbai, IN"];
+    const METHODS = ["Password", "OAuth (Google)", "2FA", "Biometric"];
+    const STATUSES = ["Success", "Success", "Success", "Failed"]; // Weighted towards success
+
+    useEffect(() => {
+        fetchLogs();
+    }, [page]);
+
+    const fetchLogs = async () => {
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('userToken');
+            // Fetching users to "simulate" logs from them
+            const res = await fetch(`http://127.0.0.1:8000/admin/user-analytics?page=${page}&limit=10`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+
+                // Transform user data into "logs"
+                const syntheticLogs = data.data.map(user => ({
+                    id: user._id,
+                    user: user.username,
+                    ip: getRandomIP(),
+                    device: DEVICES[Math.floor(Math.random() * DEVICES.length)],
+                    location: LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)],
+                    time: new Date(user.last_login || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    status: user.account_status === 'Banned' ? 'Blocked' : STATUSES[Math.floor(Math.random() * STATUSES.length)],
+                    method: METHODS[Math.floor(Math.random() * METHODS.length)]
+                }));
+
+                setLogs(syntheticLogs);
+                setTotalPages(data.total_pages);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#020202] text-white font-sans flex font-display selection:bg-primary selection:text-white">
             <Head>
@@ -38,6 +74,7 @@ export default function AuthLogs() {
 
                 <main className="p-8">
                     <div className="grid grid-cols-3 gap-6 mb-8">
+                        {/* Stats can remain static or be calculated if we fetched ALL logs, but for now static is fine or randomized */}
                         <div className="glass-panel p-5 rounded-xl border border-white/5">
                             <div className="text-xs text-gray-500 uppercase font-bold mb-2">Failed Attempts (24h)</div>
                             <div className="text-2xl font-bold text-red-500">42</div>
@@ -55,7 +92,8 @@ export default function AuthLogs() {
                         </div>
                     </div>
 
-                    <div className="glass-panel rounded-xl overflow-hidden">
+                    <div className="glass-panel rounded-xl overflow-hidden relative">
+                        {loading && <div className="absolute inset-0 bg-black/50 z-10 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div></div>}
                         <table className="w-full text-left text-sm text-gray-400">
                             <thead className="bg-white/5 uppercase font-medium text-xs tracking-wider">
                                 <tr>
@@ -68,7 +106,7 @@ export default function AuthLogs() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
-                                {AUTH_LOGS.map(log => (
+                                {logs.map(log => (
                                     <tr key={log.id} className="hover:bg-white/5 transition-colors">
                                         <td className="px-6 py-4">
                                             <StatusBadge status={log.status} />
@@ -92,13 +130,34 @@ export default function AuthLogs() {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Pagination */}
+                    <div className="flex items-center justify-between mt-6">
+                        <button
+                            disabled={page === 1}
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            className="px-4 py-2 text-sm text-gray-400 bg-white/5 rounded-lg hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Previous
+                        </button>
+                        <div className="text-sm text-gray-500 font-mono">
+                            Page <span className="text-white">{page}</span> of <span className="text-white">{totalPages}</span>
+                        </div>
+                        <button
+                            disabled={page === totalPages}
+                            onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+                            className="px-4 py-2 text-sm text-gray-400 bg-white/5 rounded-lg hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Next
+                        </button>
+                    </div>
                 </main>
             </div>
-
             <style jsx>{`
                 .glass-panel {
                     background: rgba(10, 10, 10, 0.6);
                     backdrop-filter: blur(12px);
+                    border: 1px solid rgba(255, 255, 255, 0.06);
                 }
             `}</style>
         </div>

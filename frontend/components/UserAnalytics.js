@@ -20,6 +20,18 @@ const UserAnalytics = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
+    // --- User Analytics State (New) ---
+    const [userAnalyticsData, setUserAnalyticsData] = useState([]);
+    const [userTotal, setUserTotal] = useState(0);
+    const [userLoading, setUserLoading] = useState(false);
+    const [userPage, setUserPage] = useState(1);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [userFilters, setUserFilters] = useState({
+        username: '',
+        platform: 'All Platforms',
+        category: 'All Categories'
+    });
+
     // --- Enhanced Theme Constants ---
     const BRAND_COLORS = {
         Netflix: '#e60a15',
@@ -55,6 +67,44 @@ const UserAnalytics = () => {
         };
         fetchData();
     }, []);
+
+    // --- Fetch User Analytics (New) ---
+    useEffect(() => {
+        const fetchUserAnalytics = async () => {
+            setUserLoading(true);
+            try {
+                const params = new URLSearchParams({
+                    page: userPage,
+                    limit: 10,
+                    username: userFilters.username,
+                    platform_filter: userFilters.platform,
+                    category_filter: userFilters.category
+                });
+
+                // Using the new API endpoint
+                const response = await fetch(`http://127.0.0.1:8000/admin/user-analytics?${params.toString()}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` } // Corrected key
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    setUserAnalyticsData(result.data);
+                    setUserTotal(result.total);
+                }
+            } catch (error) {
+                console.error("Error fetching user analytics:", error);
+            } finally {
+                setUserLoading(false);
+            }
+        };
+
+        // Debounce for username search
+        const timeoutId = setTimeout(() => {
+            fetchUserAnalytics();
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [userFilters, userPage]);
 
     // --- Extract Unique Years ---
     const availableYears = useMemo(() => {
@@ -578,6 +628,224 @@ const UserAnalytics = () => {
                     </div>
                 )}
             </div>
+
+            {/* --- New User Analytics Section --- */}
+            <div className="mt-12 mb-8 flex items-end justify-between border-b border-white/5 pb-6">
+                <div>
+                    <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+                        <span className="w-2 h-6 bg-cyan-400 rounded-full"></span>
+                        User Intelligence & Analytics
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-2 ml-4">Real-time user monitoring and engagement tracking.</p>
+                </div>
+            </div>
+
+            {/* User Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 p-6 glass-panel rounded-xl">
+                <div className="flex flex-col gap-3">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Search User</label>
+                    <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3 top-2.5 text-gray-500 text-sm">search</span>
+                        <input
+                            type="text"
+                            placeholder="Username..."
+                            value={userFilters.username}
+                            onChange={(e) => setUserFilters({ ...userFilters, username: e.target.value })}
+                            className="bg-black/40 border border-white/10 text-white text-sm rounded-lg pl-10 pr-4 py-2 w-full focus:outline-none focus:border-cyan-400 transition-colors"
+                        />
+                    </div>
+                </div>
+                <div className="flex flex-col gap-3">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Platform Interest</label>
+                    <select
+                        value={userFilters.platform}
+                        onChange={(e) => setUserFilters({ ...userFilters, platform: e.target.value })}
+                        className="filter-input w-full bg-black/20"
+                    >
+                        <option>All Platforms</option>
+                        <option>Netflix</option>
+                        <option>Prime Video</option>
+                        <option>Disney+</option>
+                        <option>Hulu</option>
+                    </select>
+                </div>
+                <div className="flex flex-col gap-3">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Category Preference</label>
+                    <select
+                        value={userFilters.category}
+                        onChange={(e) => setUserFilters({ ...userFilters, category: e.target.value })}
+                        className="filter-input w-full bg-black/20"
+                    >
+                        <option>All Categories</option>
+                        <option>Action</option>
+                        <option>Comedy</option>
+                        <option>Drama</option>
+                        <option>Sci-Fi</option>
+                    </select>
+                </div>
+            </div>
+
+            {/* User Table */}
+            <div className="glass-panel rounded-xl overflow-hidden p-6 relative">
+                {userLoading && <div className="absolute inset-0 bg-black/50 z-10 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-cyan-400"></div></div>}
+
+                <div className="overflow-x-auto rounded-lg border border-white/5">
+                    <table className="w-full text-left text-sm text-gray-400">
+                        <thead className="bg-[#0a0a0a] text-xs uppercase font-medium text-gray-500 font-mono tracking-wider">
+                            <tr>
+                                <th className="px-6 py-4 bg-[#0a0a0a]">User</th>
+                                <th className="px-6 py-4 bg-[#0a0a0a]">Email</th>
+                                <th className="px-6 py-4 bg-[#0a0a0a]">Subscription</th>
+                                <th className="px-6 py-4 bg-[#0a0a0a]">Preferences</th>
+                                <th className="px-6 py-4 bg-[#0a0a0a]">Watch Time</th>
+                                <th className="px-6 py-4 bg-[#0a0a0a]">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                            {userAnalyticsData.length > 0 ? userAnalyticsData.map((user) => (
+                                <tr key={user._id} className="hover:bg-cyan-500/[0.05] transition-colors">
+                                    <td className="px-6 py-4 font-bold text-white flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-xs font-bold text-white">
+                                            {user.username.charAt(0).toUpperCase()}
+                                        </div>
+                                        {user.username}
+                                    </td>
+                                    <td className="px-6 py-4 text-xs font-mono">{user.email}</td>
+                                    <td className="px-6 py-4">
+                                        <span className={`px-2 py-1 rounded text-[10px] uppercase font-bold border ${user.subscription_tier === 'Premium' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                            user.subscription_tier === 'Standard' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                                'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                                            }`}>
+                                            {user.subscription_tier}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-wrap gap-1">
+                                            {user.preferences.slice(0, 2).map((p, i) => (
+                                                <span key={i} className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-gray-300">{p}</span>
+                                            ))}
+                                            {user.preferences.length > 2 && <span className="text-[10px] text-gray-500">+{user.preferences.length - 2}</span>}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 font-mono text-xs text-cyan-400">{Math.round(user.total_watch_time_mins / 60)}h {(user.total_watch_time_mins % 60)}m</td>
+                                    <td className="px-6 py-4">
+                                        <button
+                                            onClick={() => setSelectedUser(user)}
+                                            className="text-xs bg-cyan-500 hover:bg-cyan-600 text-white px-3 py-1.5 rounded transition-colors"
+                                        >
+                                            View Details
+                                        </button>
+                                    </td>
+                                </tr>
+                            )) : (
+                                <tr><td colSpan="6" className="px-6 py-8 text-center text-gray-500">No users found.</td></tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* User Pagination */}
+                <div className="flex items-center justify-between mt-4">
+                    <button
+                        disabled={userPage === 1}
+                        onClick={() => setUserPage(p => Math.max(1, p - 1))}
+                        className="px-3 py-1 text-xs text-gray-400 bg-white/5 rounded hover:bg-white/10 disabled:opacity-50"
+                    >Previous</button>
+                    <span className="text-xs text-gray-500">Page <span className="text-white">{userPage}</span> of <span className="text-white">{Math.ceil(userTotal / 10)}</span></span>
+                    <button
+                        disabled={userPage * 10 >= userTotal}
+                        onClick={() => setUserPage(p => p + 1)}
+                        className="px-3 py-1 text-xs text-gray-400 bg-white/5 rounded hover:bg-white/10 disabled:opacity-50"
+                    >Next</button>
+                </div>
+            </div>
+
+            {/* User Details Modal */}
+            {selectedUser && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl relative">
+                        <button
+                            onClick={() => setSelectedUser(null)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-white"
+                        >
+                            <span className="material-symbols-outlined">close</span>
+                        </button>
+
+                        <div className="p-8">
+                            <div className="flex items-start gap-6 border-b border-white/5 pb-8 mb-8">
+                                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-3xl font-bold text-white shadow-lg shadow-cyan-500/20">
+                                    {selectedUser.username.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h2 className="text-3xl font-bold text-white">{selectedUser.full_name}</h2>
+                                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
+                                        <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">alternate_email</span> {selectedUser.username}</span>
+                                        <span className="w-1 h-1 bg-gray-500 rounded-full"></span>
+                                        <span>{selectedUser.email}</span>
+                                    </div>
+                                    <div className="flex gap-2 mt-4">
+                                        {selectedUser.preferences.map(p => (
+                                            <span key={p} className="px-2 py-1 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs rounded-full">{p}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div>
+                                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-green-400">history</span>
+                                        Watch History
+                                    </h3>
+                                    <div className="space-y-3">
+                                        {selectedUser.history.slice(0, 5).map((item, idx) => (
+                                            <div key={idx} className="flex items-center gap-4 bg-white/5 p-3 rounded-lg border border-white/5">
+                                                <div className="flex-1">
+                                                    <div className="text-sm font-bold text-white">{item.title}</div>
+                                                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                                                        <span className={`font-bold ${item.platform === 'Netflix' ? 'text-red-500' : item.platform === 'Prime Video' ? 'text-blue-500' : item.platform === 'Hulu' ? 'text-green-500' : item.platform === 'Disney+' ? 'text-cyan-400' : 'text-gray-400'}`}>
+                                                            {item.platform}
+                                                        </span>
+                                                        <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
+                                                        <span>{new Date(item.date).toLocaleDateString()}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="text-xs font-mono text-gray-400">{item.watched_duration_mins}m</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-yellow-400">star</span>
+                                        Recent Ratings
+                                    </h3>
+                                    <div className="space-y-3">
+                                        {selectedUser.ratings.slice(0, 5).map((rate, idx) => (
+                                            <div key={idx} className="bg-white/5 p-3 rounded-lg border border-white/5">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="text-sm font-bold text-white">{rate.title}</span>
+                                                    <div className="flex text-yellow-500 text-xs">
+                                                        {[...Array(5)].map((_, i) => (
+                                                            <span key={i} className="material-symbols-outlined text-[10px]">
+                                                                {i < rate.rating ? 'star' : 'star_border'}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <p className="text-xs text-gray-400 translate-y-[-2px] italic">"{rate.review}"</p>
+                                            </div>
+                                        ))}
+                                        {selectedUser.ratings.length === 0 && <p className="text-sm text-gray-500 italic">No ratings given yet.</p>}
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     );
